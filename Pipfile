@@ -4,8 +4,15 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+pyinstaller = "*"
+pytest = "*"
+pytest-cov = "*"
 
 [packages]
+docker = "*"
+boto3 = "*"
+bottle = "*"
+schedule = "*"
 
 [requires]
 python_version = "3.8"
