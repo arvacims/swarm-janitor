@@ -1,0 +1,9 @@
+*.iml
+.idea/
+/.coverage
+/build/
+/coverage.xml
+/dist/
+/htmlcov/
+/junit/
+/paas-manager.spec
