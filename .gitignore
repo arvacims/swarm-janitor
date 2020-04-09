@@ -6,4 +6,4 @@
 /dist/
 /htmlcov/
 /junit/
-/paas-manager.spec
+/swarm-janitor.spec
