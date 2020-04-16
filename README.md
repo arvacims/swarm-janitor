@@ -1,6 +1,23 @@
-# Docker Swarm Janitor
+# Docker Swarm Janitor for Amazon Web Services (AWS)
 
-Docker Swarm Janitor for deployments on Amazon Web Services (AWS) EC2 auto-scaling groups.
+Docker Swarm Janitor executes maintenance tasks for your Docker Swarm cluster which
+* is deployed on Amazon EC2 auto-scaling groups (one for the manager nodes and one for the worker nodes),
+* is using Amazon ECR as private Docker registry.
+
+
+## Features (production ready)
+
+Docker Swarm Janitor is a light-weight daemon process deployed as Docker image (see below) which
+* executes `docker system prune --force [--all] [--volumes]` at the configured rate,
+* executes `docker login` (into your ECR) and `docker service update --with-registry-auth` at the configured rate.
+
+
+## Features (announced)
+
+Docker Swarm Janitor automatically
+* discovers manager nodes,
+* retrieves join tokens, and
+* ensures all nodes (re-)join the cluster.
 
 
 ## Usage
