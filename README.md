@@ -45,6 +45,24 @@ Run the automated tests and generate the coverage report.
 $ pipenv run pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml --cov-report=html
 ~~~~
 
+Run the application from source.
+~~~~
+$ export AWS_ACCESS_KEY_ID=********************
+$ export AWS_SECRET_ACCESS_KEY=****************************************
+$ export AWS_DEFAULT_REGION=eu-west-1
+$ export SWARM_REGISTRY=************.dkr.ecr.eu-west-1.amazonaws.com
+$ export SWARM_INTERVAL_PRUNE_SYSTEM=10
+$ export SWARM_INTERVAL_REFRESH_AUTH=10
+$ export SWARM_PRUNE_IMAGES=false
+$ export SWARM_PRUNE_VOLUMES=false
+$ pipenv run ./swarm-janitor.py
+~~~~
+
+Build the Docker image.
+~~~~
+$ docker build --tag swarm-janitor:latest .
+~~~~
+
 Build the stand-alone executable.
 ~~~~
 $ pipenv run pyinstaller \
@@ -65,9 +83,4 @@ $ rm -rf \
     htmlcov/ \
     junit/ \
     swarm-janitor.spec
-~~~~
-
-Build the Docker image.
-~~~~
-$ docker build --tag swarm-janitor:latest .
 ~~~~
