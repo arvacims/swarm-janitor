@@ -1,5 +1,7 @@
+import argparse
 import logging
 
+import swarmjanitor.version
 from swarmjanitor.config import JanitorConfig
 from swarmjanitor.dockerclient import JanitorDockerClient
 from swarmjanitor.scheduler import JanitorScheduler
@@ -8,6 +10,13 @@ from swarmjanitor.shutdown import ShutdownHandler
 
 
 def run():
+    parser = argparse.ArgumentParser(
+        prog='swarm-janitor',
+        description='Executes maintenance tasks for your Docker Swarm cluster.'
+    )
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {swarmjanitor.version.VERSION}')
+    parser.parse_args()
+
     logging.basicConfig(format='%(levelname)-8.8s [%(threadName)10.10s] %(message)s', level='INFO')
 
     config = JanitorConfig()
