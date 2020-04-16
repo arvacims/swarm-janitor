@@ -47,8 +47,8 @@ class JanitorScheduler(Scheduler, Stoppable):
         self._schedule_jobs()
 
     def _schedule_jobs(self):
-        interval_refresh_auth = int(self.config.interval_refresh_auth)
-        self.every(interval_refresh_auth).seconds.do(self.update_all_services)
+        self.every(self.config.interval_prune_system).seconds.do(self.prune_system)
+        self.every(self.config.interval_refresh_auth).seconds.do(self.refresh_auth)
 
     def stop(self, signum, frame):
         self.clear()
@@ -90,7 +90,19 @@ class JanitorScheduler(Scheduler, Stoppable):
         )
 
     @scheduled()
-    def update_all_services(self):
+    def prune_system(self):
+        self.docker_client.prune_containers()
+
+        if self.config.prune_images:
+            self.docker_client.prune_images()
+
+        self.docker_client.prune_networks()
+
+        if self.config.prune_volumes:
+            self.docker_client.prune_volumes()
+
+    @scheduled()
+    def refresh_auth(self):
         auth = self._request_docker_auth()
         self.docker_client.refresh_login(auth)
         self.docker_client.update_all_services()

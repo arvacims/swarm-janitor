@@ -14,6 +14,26 @@ class JanitorDockerClient:
 
     client: DockerClient = docker.from_env()
 
+    def prune_containers(self):
+        logging.info('Pruning containers ...')
+        containers = self.client.containers.prune()
+        logging.info(containers)
+
+    def prune_images(self):
+        logging.info('Pruning images ...')
+        images = self.client.images.prune(filters={'dangling': False})
+        logging.info(images)
+
+    def prune_networks(self):
+        logging.info('Pruning networks ...')
+        networks = self.client.networks.prune()
+        logging.info(networks)
+
+    def prune_volumes(self):
+        logging.info('Pruning volumes ...')
+        volumes = self.client.volumes.prune()
+        logging.info(volumes)
+
     def refresh_login(self, auth: Authentication):
         registry = auth.registry
 

@@ -27,7 +27,10 @@ $ export AWS_ACCESS_KEY_ID='********************'
 $ export AWS_SECRET_ACCESS_KEY='****************************************'
 $ export AWS_DEFAULT_REGION='eu-west-1'
 $ export SWARM_REGISTRY='************.dkr.ecr.eu-west-1.amazonaws.com'
+$ export SWARM_INTERVAL_PRUNE_SYSTEM='10'
 $ export SWARM_INTERVAL_REFRESH_AUTH='10'
+$ export SWARM_PRUNE_IMAGES='true'
+$ export SWARM_PRUNE_VOLUMES='true'
 $ pipenv run ./swarm-janitor.py
 ~~~~
 
