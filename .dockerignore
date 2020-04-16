@@ -1,0 +1,16 @@
+*.iml
+.idea/
+/.coverage
+/build/
+/coverage.xml
+/dist/
+/htmlcov/
+/junit/
+/swarm-janitor.spec
+
+/.dockerignore
+/.git/
+/.gitignore
+/COPYING
+/Dockerfile
+/README.md
