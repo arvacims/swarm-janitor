@@ -17,6 +17,8 @@ def run():
 
     shutdown_handler = ShutdownHandler([server, scheduler])
 
+    scheduler.run_all(delay_seconds=5)
+
     logging.info('Starting scheduler loop ...')
     while not shutdown_handler.stop_now:
         scheduler.run_pending()
