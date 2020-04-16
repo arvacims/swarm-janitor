@@ -20,6 +20,18 @@ $ pipenv run pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml -
 ~~~~
 
 
+# How to use
+
+~~~~
+$ export AWS_ACCESS_KEY_ID='********************'
+$ export AWS_SECRET_ACCESS_KEY='****************************************'
+$ export AWS_DEFAULT_REGION='eu-west-1'
+$ export SWARM_REGISTRY='************.dkr.ecr.eu-west-1.amazonaws.com'
+$ export SWARM_INTERVAL_REFRESH_AUTH='10'
+$ pipenv run ./swarm-janitor.py
+~~~~
+
+
 # How to clean up
 
 ~~~~

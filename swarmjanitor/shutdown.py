@@ -21,7 +21,7 @@ class ShutdownHandler(Stoppable):
         signal.signal(signal.SIGTERM, self.stop)
 
     def stop(self, signum, frame):
-        logging.info('Shutting down ...')
+        logging.info('Received signal <%s>. Shutting down ...', str(signum))
 
         for component in self.components:
             component.stop(signum, frame)

@@ -1,22 +1,26 @@
 import logging
-import time
 
-import schedule
-
+from swarmjanitor.config import JanitorConfig
+from swarmjanitor.dockerclient import JanitorDockerClient
+from swarmjanitor.scheduler import JanitorScheduler
 from swarmjanitor.server import JanitorServer
 from swarmjanitor.shutdown import ShutdownHandler
 
 
 def run():
-    logging.basicConfig(format='%(levelname)s: [%(threadName)10.10s] %(message)s', level='INFO')
+    logging.basicConfig(format='%(levelname)-8.8s [%(threadName)10.10s] %(message)s', level='INFO')
 
-    janitor_server = JanitorServer.start()
-    shutdown_handler = ShutdownHandler([janitor_server])
+    config = JanitorConfig()
+    docker_client = JanitorDockerClient()
+    scheduler = JanitorScheduler(config, docker_client)
+    server = JanitorServer.start(scheduler)
 
-    logging.info('Executing scheduler ...')
+    shutdown_handler = ShutdownHandler([server, scheduler])
+
+    logging.info('Starting scheduler loop ...')
     while not shutdown_handler.stop_now:
-        schedule.run_pending()
-        time.sleep(1)
+        scheduler.run_pending()
+        scheduler.tick()
 
-    logging.info('Shutdown completed.')
+    logging.info('Stopped scheduler loop.')
     logging.shutdown()
