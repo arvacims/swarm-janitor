@@ -1,4 +1,3 @@
-import base64
 import functools
 import logging
 import time
@@ -6,9 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from schedule import CancelJob, Job, Scheduler
 
-from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
-from swarmjanitor.dockerclient import JanitorDockerClient
+from swarmjanitor.core import JanitorCore
 from swarmjanitor.shutdown import Stoppable
 
 
@@ -36,19 +34,19 @@ def scheduled(catch_exceptions: bool = True, cancel_on_failure: bool = False):
 class JanitorScheduler(Scheduler, Stoppable):
     tick_seconds: int = 1
     config: JanitorConfig
-    docker_client: JanitorDockerClient
+    core: JanitorCore
 
-    def __init__(self, config: JanitorConfig, docker_client: JanitorDockerClient):
+    def __init__(self, config: JanitorConfig, core: JanitorCore):
         super().__init__()
 
         self.config = config
-        self.docker_client = docker_client
+        self.core = core
 
         self._schedule_jobs()
 
     def _schedule_jobs(self):
-        self.every(self.config.interval_prune_system).seconds.do(self.prune_system)
-        self.every(self.config.interval_refresh_auth).seconds.do(self.refresh_auth)
+        self.every(self.config.interval_prune_system).seconds.do(scheduled()(self.core.prune_system))
+        self.every(self.config.interval_refresh_auth).seconds.do(scheduled()(self.core.refresh_auth))
 
     def stop(self, signum, frame):
         self.clear()
@@ -79,30 +77,3 @@ class JanitorScheduler(Scheduler, Stoppable):
             'period': _str_or_none(job.period),
             'startDay': _str_or_none(job.start_day),
         }
-
-    def _request_docker_auth(self) -> JanitorDockerClient.Authentication:
-        ecr_auth_token = JanitorAwsClient.request_auth_token()
-        user_and_pass = base64.b64decode(ecr_auth_token).decode('UTF-8').split(':')
-        return JanitorDockerClient.Authentication(
-            username=user_and_pass[0],
-            password=user_and_pass[1],
-            registry=self.config.registry
-        )
-
-    @scheduled()
-    def prune_system(self):
-        self.docker_client.prune_containers()
-
-        if self.config.prune_images:
-            self.docker_client.prune_images()
-
-        self.docker_client.prune_networks()
-
-        if self.config.prune_volumes:
-            self.docker_client.prune_volumes()
-
-    @scheduled()
-    def refresh_auth(self):
-        auth = self._request_docker_auth()
-        self.docker_client.refresh_login(auth)
-        self.docker_client.update_all_services()

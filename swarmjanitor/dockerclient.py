@@ -1,18 +1,56 @@
 import logging
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 import docker
 from docker import DockerClient
 
 
-class JanitorDockerClient:
-    @dataclass
-    class Authentication:
-        username: str
-        password: str
-        registry: str
+@dataclass(frozen=True)
+class LoginData:
+    username: str
+    password: str
+    registry: str
 
+
+@dataclass(frozen=True)
+class ManagerInfo:
+    node_id: str
+    addr: str
+
+
+@dataclass(frozen=True)
+class SwarmInfo:
+    local_node_state: str
+    node_id: str
+    remote_managers: List[ManagerInfo]
+
+
+@dataclass(frozen=True)
+class JoinTokens:
+    manager: str
+    worker: str
+
+
+class JanitorDockerClient:
     client: DockerClient = docker.from_env()
+
+    def swarm_info(self) -> SwarmInfo:
+        def remote_managers(manager_dicts: Optional[List[Dict]]) -> List[ManagerInfo]:
+            if manager_dicts is None:
+                return []
+            return [ManagerInfo(manager_dict['NodeID'], manager_dict['Addr']) for manager_dict in manager_dicts]
+
+        swarm_dict: Dict = self.client.info()['Swarm']
+        return SwarmInfo(
+            local_node_state=swarm_dict['LocalNodeState'],
+            node_id=swarm_dict['NodeID'],
+            remote_managers=remote_managers(swarm_dict['RemoteManagers'])
+        )
+
+    def join_tokens(self) -> JoinTokens:
+        tokens = self.client.swarm.attrs['JoinTokens']
+        return JoinTokens(tokens['Manager'], tokens['Worker'])
 
     def prune_containers(self):
         logging.info('Pruning containers ...')
@@ -34,7 +72,7 @@ class JanitorDockerClient:
         volumes = self.client.volumes.prune()
         logging.info(volumes)
 
-    def refresh_login(self, auth: Authentication):
+    def refresh_login(self, auth: LoginData):
         registry = auth.registry
 
         logging.info('Logging in to the Docker registry "%s" ...', registry)

@@ -3,6 +3,7 @@ import logging
 
 import swarmjanitor.version
 from swarmjanitor.config import JanitorConfig
+from swarmjanitor.core import JanitorCore
 from swarmjanitor.dockerclient import JanitorDockerClient
 from swarmjanitor.scheduler import JanitorScheduler
 from swarmjanitor.server import JanitorServer
@@ -21,8 +22,9 @@ def run():
 
     config = JanitorConfig()
     docker_client = JanitorDockerClient()
-    scheduler = JanitorScheduler(config, docker_client)
-    server = JanitorServer.start(scheduler)
+    core = JanitorCore(config, docker_client)
+    scheduler = JanitorScheduler(config, core)
+    server = JanitorServer.start(core, scheduler)
 
     shutdown_handler = ShutdownHandler([server, scheduler])
 
