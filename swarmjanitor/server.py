@@ -28,10 +28,11 @@ class JanitorServer(Stoppable):
         self.app.get(path='/health', callback=JanitorServer._health)
         self.app.get(path='/jobs', callback=self._jobs)
         self.app.get(path='/join-tokens', callback=self._join_tokens)
+        self.app.get(path='/debug-info', callback=self.core.debug_info)
 
     def _run_server(self):
         logging.info('Starting server ...')
-        self.app.run(host='localhost', port=2380)
+        self.app.run(host='0.0.0.0', port=2380)
 
     def _start_daemon(self):
         self.thread.start()

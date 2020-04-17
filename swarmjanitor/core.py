@@ -1,4 +1,5 @@
 import base64
+from typing import Dict
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
@@ -42,6 +43,14 @@ class JanitorCore:
         if not _is_manager(self.docker_client.swarm_info()):
             raise RuntimeError()
         return self.docker_client.join_tokens()
+
+    def debug_info(self) -> Dict:
+        swarm_info = self.docker_client.swarm_info()
+        return {
+            'isSwarmActive': _is_swarm_active(swarm_info),
+            'isManager': _is_manager(swarm_info),
+            'isWorker': _is_worker(swarm_info)
+        }
 
 
 def _is_swarm_active(swarm_info: SwarmInfo) -> bool:
