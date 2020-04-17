@@ -1,7 +1,7 @@
 import base64
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
@@ -28,6 +28,15 @@ class JoinInfo:
     address: str
     manager: str
     worker: str
+
+
+@dataclass(frozen=True)
+class SystemInfo:
+    is_swarm_active: bool
+    is_manager: bool
+    is_worker: bool
+    is_leader: bool
+    possible_manager_nodes: List[str]
 
 
 class JanitorCore:
@@ -89,15 +98,15 @@ class JanitorCore:
     def _discover_possible_manager_addresses(self) -> List[str]:
         return JanitorAwsClient.discover_possible_manager_addresses(self.config.manager_name_filter)
 
-    def system_info(self) -> Dict:
+    def system_info(self) -> SystemInfo:
         swarm_info = self.docker_client.swarm_info()
-        return {
-            'isSwarmActive': _is_swarm_active(swarm_info),
-            'isManager': _is_manager(swarm_info),
-            'isWorker': _is_worker(swarm_info),
-            'isLeader': self._is_leader(swarm_info),
-            'possibleManagerNodes': self._discover_possible_manager_addresses()
-        }
+        return SystemInfo(
+            is_swarm_active=_is_swarm_active(swarm_info),
+            is_manager=_is_manager(swarm_info),
+            is_worker=_is_worker(swarm_info),
+            is_leader=self._is_leader(swarm_info),
+            possible_manager_nodes=self._discover_possible_manager_addresses()
+        )
 
 
 def _is_swarm_active(swarm_info: SwarmInfo) -> bool:

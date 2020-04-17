@@ -1,3 +1,4 @@
+import functools
 import logging
 from threading import Thread
 from typing import Dict
@@ -7,6 +8,24 @@ from bottle import Bottle, HTTPError
 from swarmjanitor.core import JanitorCore, JanitorError
 from swarmjanitor.scheduler import JanitorScheduler
 from swarmjanitor.shutdown import Stoppable
+
+
+def _health() -> Dict:
+    return {'status': 'UP'}
+
+
+def json(error_status: int = 500):
+    def json_decorator(request_func):
+        @functools.wraps(request_func)
+        def wrapper(*args, **kwargs):
+            try:
+                return vars(request_func(*args, **kwargs))
+            except JanitorError as error:
+                raise HTTPError(status=error_status, body=error.message)
+
+        return wrapper
+
+    return json_decorator
 
 
 class JanitorServer(Stoppable):
@@ -25,10 +44,10 @@ class JanitorServer(Stoppable):
         self._register_routes()
 
     def _register_routes(self):
-        self.app.get(path='/health', callback=JanitorServer._health)
+        self.app.get(path='/health', callback=_health)
         self.app.get(path='/jobs', callback=self._jobs)
-        self.app.get(path='/join', callback=self._join_info)
-        self.app.get(path='/system', callback=self.core.system_info)
+        self.app.get(path='/join', callback=json(400)(self.core.join_info))
+        self.app.get(path='/system', callback=json()(self.core.system_info))
 
     def _run_server(self):
         logging.info('Starting server ...')
@@ -47,15 +66,5 @@ class JanitorServer(Stoppable):
         janitor_server._start_daemon()
         return janitor_server
 
-    @staticmethod
-    def _health() -> Dict:
-        return {'status': 'UP'}
-
     def _jobs(self) -> Dict:
-        return {'jobList': self.scheduler.list_jobs()}
-
-    def _join_info(self) -> Dict:
-        try:
-            return vars(self.core.join_info())
-        except JanitorError as error:
-            raise HTTPError(status=400, body=error.message)
+        return {'job_list': self.scheduler.list_jobs()}
