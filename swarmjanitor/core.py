@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import Dict
+from typing import Dict, List
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
@@ -53,12 +53,21 @@ class JanitorCore:
             raise RuntimeError()
         return self.docker_client.join_tokens()
 
+    def _discover_possible_manager_node_addresses(self) -> List[str]:
+        description = JanitorAwsClient.discover_possible_manager_nodes(self.config.manager_name_filter)
+        try:
+            instances = description['Reservations'][0]['Instances']
+            return [instance['PrivateIpAddress'] for instance in instances]
+        except IndexError:
+            return []
+
     def debug_info(self) -> Dict:
         swarm_info = self.docker_client.swarm_info()
         return {
             'isSwarmActive': _is_swarm_active(swarm_info),
             'isManager': _is_manager(swarm_info),
-            'isWorker': _is_worker(swarm_info)
+            'isWorker': _is_worker(swarm_info),
+            'possibleManagerNodes': self._discover_possible_manager_node_addresses()
         }
 
 
