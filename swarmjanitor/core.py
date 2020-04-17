@@ -1,10 +1,25 @@
 import base64
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
 from swarmjanitor.dockerclient import JanitorDockerClient, JoinTokens, LoginData, NodeState, SwarmInfo
+
+
+class JanitorError(RuntimeError):
+    message: str
+
+    def __init__(self):
+        super().__init__(self.message)
+
+
+class SwarmManagerError(JanitorError):
+    message = 'This node is not a swarm manager.'
+
+
+class SwarmLeaderError(JanitorError):
+    message = 'This node is not a swarm leader.'
 
 
 class JanitorCore:
@@ -24,8 +39,9 @@ class JanitorCore:
             registry=self.config.registry
         )
 
-    def _is_manager(self) -> bool:
-        return _is_manager(self.docker_client.swarm_info())
+    def _is_leader(self, opt_swarm_info: Optional[SwarmInfo] = None) -> bool:
+        swarm_info: SwarmInfo = self.docker_client.swarm_info() if opt_swarm_info is None else opt_swarm_info
+        return _is_manager(swarm_info) and self.docker_client.node_info(swarm_info.node_id).is_leader
 
     def prune_system(self):
         self.docker_client.prune_containers()
@@ -38,19 +54,22 @@ class JanitorCore:
         if self.config.prune_volumes:
             self.docker_client.prune_volumes()
 
-    def refresh_auth(self):
-        # TODO: Only execute this on the leader.
-        if not self._is_manager():
-            logging.info('This node is not a swarm manager. Aborting ...')
-            return
+    def refresh_auth_skip(self):
+        try:
+            self.refresh_auth()
+        except JanitorError as error:
+            logging.info('Skipped refreshing authentication: %s', error.message)
 
+    def refresh_auth(self):
+        if not self._is_leader():
+            raise SwarmLeaderError
         auth = self._request_docker_auth()
         self.docker_client.refresh_login(auth)
         self.docker_client.update_all_services()
 
     def join_tokens(self) -> JoinTokens:
-        if not self._is_manager():
-            raise RuntimeError()
+        if not _is_manager(self.docker_client.swarm_info()):
+            raise SwarmManagerError
         return self.docker_client.join_tokens()
 
     def _discover_possible_manager_addresses(self) -> List[str]:
@@ -62,6 +81,7 @@ class JanitorCore:
             'isSwarmActive': _is_swarm_active(swarm_info),
             'isManager': _is_manager(swarm_info),
             'isWorker': _is_worker(swarm_info),
+            'isLeader': self._is_leader(swarm_info),
             'possibleManagerNodes': self._discover_possible_manager_addresses()
         }
 

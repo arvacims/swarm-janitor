@@ -46,7 +46,7 @@ class JanitorScheduler(Scheduler, Stoppable):
 
     def _schedule_jobs(self):
         self.every(self.config.interval_prune_system).seconds.do(scheduled()(self.core.prune_system))
-        self.every(self.config.interval_refresh_auth).seconds.do(scheduled()(self.core.refresh_auth))
+        self.every(self.config.interval_refresh_auth).seconds.do(scheduled()(self.core.refresh_auth_skip))
 
     def stop(self, signum, frame):
         self.clear()

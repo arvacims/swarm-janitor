@@ -34,6 +34,13 @@ class SwarmInfo:
 
 
 @dataclass(frozen=True)
+class NodeInfo:
+    node_id: str
+    status: str
+    is_leader: bool
+
+
+@dataclass(frozen=True)
 class JoinTokens:
     manager: str
     worker: str
@@ -41,6 +48,14 @@ class JoinTokens:
 
 class JanitorDockerClient:
     client: DockerClient = docker.from_env()
+
+    def node_info(self, node_id: str) -> NodeInfo:
+        node_dict = self.client.nodes.get(node_id).attrs
+        return NodeInfo(
+            node_id=node_dict['ID'],
+            status=node_dict['Status']['State'],
+            is_leader=node_dict['ManagerStatus']['Leader']
+        )
 
     def swarm_info(self) -> SwarmInfo:
         def remote_managers(manager_dicts: Optional[List[Dict]]) -> List[ManagerInfo]:

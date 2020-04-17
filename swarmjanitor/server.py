@@ -2,9 +2,9 @@ import logging
 from threading import Thread
 from typing import Dict
 
-from bottle import Bottle
+from bottle import Bottle, HTTPError
 
-from swarmjanitor.core import JanitorCore
+from swarmjanitor.core import JanitorCore, JanitorError
 from swarmjanitor.scheduler import JanitorScheduler
 from swarmjanitor.shutdown import Stoppable
 
@@ -55,4 +55,7 @@ class JanitorServer(Stoppable):
         return {'jobList': self.scheduler.list_jobs()}
 
     def _join_tokens(self) -> Dict:
-        return vars(self.core.join_tokens())
+        try:
+            return vars(self.core.join_tokens())
+        except JanitorError as error:
+            raise HTTPError(status=400, body=error.message)
