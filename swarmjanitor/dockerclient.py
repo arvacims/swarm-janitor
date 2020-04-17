@@ -1,5 +1,6 @@
 import logging
 from dataclasses import dataclass
+from enum import Enum, unique
 from typing import Dict, List, Optional
 
 import docker
@@ -19,9 +20,15 @@ class ManagerInfo:
     addr: str
 
 
+@unique
+class NodeState(Enum):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+
 @dataclass(frozen=True)
 class SwarmInfo:
-    local_node_state: str
+    local_node_state: NodeState
     node_id: str
     remote_managers: List[ManagerInfo]
 
@@ -43,7 +50,7 @@ class JanitorDockerClient:
 
         swarm_dict: Dict = self.client.info()['Swarm']
         return SwarmInfo(
-            local_node_state=swarm_dict['LocalNodeState'],
+            local_node_state=NodeState(swarm_dict['LocalNodeState']),
             node_id=swarm_dict['NodeID'],
             remote_managers=remote_managers(swarm_dict['RemoteManagers'])
         )

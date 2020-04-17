@@ -4,8 +4,7 @@ from typing import Dict, List
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
-from swarmjanitor.dockerclient import JanitorDockerClient, JoinTokens, LoginData, SwarmInfo
-from swarmjanitor.utils import flatten_list
+from swarmjanitor.dockerclient import JanitorDockerClient, JoinTokens, LoginData, NodeState, SwarmInfo
 
 
 class JanitorCore:
@@ -54,12 +53,8 @@ class JanitorCore:
             raise RuntimeError()
         return self.docker_client.join_tokens()
 
-    def _discover_possible_manager_node_addresses(self) -> List[str]:
-        description = JanitorAwsClient.discover_possible_manager_nodes(self.config.manager_name_filter)
-        reservations: List[Dict] = description['Reservations']
-        reservation_instances: List[List[Dict]] = [reservation['Instances'] for reservation in reservations]
-        instances: List[Dict] = flatten_list(reservation_instances)
-        return [instance['PrivateIpAddress'] for instance in instances]
+    def _discover_possible_manager_addresses(self) -> List[str]:
+        return JanitorAwsClient.discover_possible_manager_addresses(self.config.manager_name_filter)
 
     def debug_info(self) -> Dict:
         swarm_info = self.docker_client.swarm_info()
@@ -67,12 +62,12 @@ class JanitorCore:
             'isSwarmActive': _is_swarm_active(swarm_info),
             'isManager': _is_manager(swarm_info),
             'isWorker': _is_worker(swarm_info),
-            'possibleManagerNodes': self._discover_possible_manager_node_addresses()
+            'possibleManagerNodes': self._discover_possible_manager_addresses()
         }
 
 
 def _is_swarm_active(swarm_info: SwarmInfo) -> bool:
-    return swarm_info.local_node_state == 'active'
+    return swarm_info.local_node_state == NodeState.ACTIVE
 
 
 def _is_manager(swarm_info: SwarmInfo) -> bool:
