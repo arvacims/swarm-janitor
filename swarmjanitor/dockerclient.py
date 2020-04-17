@@ -52,11 +52,12 @@ class JanitorDockerClient:
 
     def node_info(self, node_id: str) -> NodeInfo:
         node_dict = self.client.nodes.get(node_id).attrs
+        manager_status: Dict = node_dict['ManagerStatus']
         return NodeInfo(
             node_id=node_dict['ID'],
-            addr=node_dict['ManagerStatus']['Addr'],
+            addr=manager_status['Addr'],
             status=node_dict['Status']['State'],
-            is_leader=node_dict['ManagerStatus']['Leader']
+            is_leader=manager_status.get('Leader', False)
         )
 
     def swarm_info(self) -> SwarmInfo:
