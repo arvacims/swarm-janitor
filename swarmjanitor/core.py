@@ -1,4 +1,5 @@
 import base64
+import logging
 from typing import Dict
 
 from swarmjanitor.awsclient import JanitorAwsClient
@@ -23,6 +24,9 @@ class JanitorCore:
             registry=self.config.registry
         )
 
+    def _is_manager(self) -> bool:
+        return _is_manager(self.docker_client.swarm_info())
+
     def prune_system(self):
         self.docker_client.prune_containers()
 
@@ -35,12 +39,17 @@ class JanitorCore:
             self.docker_client.prune_volumes()
 
     def refresh_auth(self):
+        # TODO: Only execute this on the leader.
+        if not self._is_manager():
+            logging.info('This node is not a swarm manager. Aborting ...')
+            return
+
         auth = self._request_docker_auth()
         self.docker_client.refresh_login(auth)
         self.docker_client.update_all_services()
 
     def join_tokens(self) -> JoinTokens:
-        if not _is_manager(self.docker_client.swarm_info()):
+        if not self._is_manager():
             raise RuntimeError()
         return self.docker_client.join_tokens()
 
