@@ -5,6 +5,7 @@ from typing import Dict, List
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
 from swarmjanitor.dockerclient import JanitorDockerClient, JoinTokens, LoginData, SwarmInfo
+from swarmjanitor.utils import flatten_list
 
 
 class JanitorCore:
@@ -55,11 +56,10 @@ class JanitorCore:
 
     def _discover_possible_manager_node_addresses(self) -> List[str]:
         description = JanitorAwsClient.discover_possible_manager_nodes(self.config.manager_name_filter)
-        try:
-            instances = description['Reservations'][0]['Instances']
-            return [instance['PrivateIpAddress'] for instance in instances]
-        except IndexError:
-            return []
+        reservations: List[Dict] = description['Reservations']
+        reservation_instances: List[List[Dict]] = [reservation['Instances'] for reservation in reservations]
+        instances: List[Dict] = flatten_list(reservation_instances)
+        return [instance['PrivateIpAddress'] for instance in instances]
 
     def debug_info(self) -> Dict:
         swarm_info = self.docker_client.swarm_info()
