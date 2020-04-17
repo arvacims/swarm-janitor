@@ -36,6 +36,7 @@ class SwarmInfo:
 @dataclass(frozen=True)
 class NodeInfo:
     node_id: str
+    addr: str
     status: str
     is_leader: bool
 
@@ -53,6 +54,7 @@ class JanitorDockerClient:
         node_dict = self.client.nodes.get(node_id).attrs
         return NodeInfo(
             node_id=node_dict['ID'],
+            addr=node_dict['ManagerStatus']['Addr'],
             status=node_dict['Status']['State'],
             is_leader=node_dict['ManagerStatus']['Leader']
         )

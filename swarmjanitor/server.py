@@ -27,8 +27,8 @@ class JanitorServer(Stoppable):
     def _register_routes(self):
         self.app.get(path='/health', callback=JanitorServer._health)
         self.app.get(path='/jobs', callback=self._jobs)
-        self.app.get(path='/join-tokens', callback=self._join_tokens)
-        self.app.get(path='/debug-info', callback=self.core.debug_info)
+        self.app.get(path='/join', callback=self._join_info)
+        self.app.get(path='/system', callback=self.core.system_info)
 
     def _run_server(self):
         logging.info('Starting server ...')
@@ -54,8 +54,8 @@ class JanitorServer(Stoppable):
     def _jobs(self) -> Dict:
         return {'jobList': self.scheduler.list_jobs()}
 
-    def _join_tokens(self) -> Dict:
+    def _join_info(self) -> Dict:
         try:
-            return vars(self.core.join_tokens())
+            return vars(self.core.join_info())
         except JanitorError as error:
             raise HTTPError(status=400, body=error.message)

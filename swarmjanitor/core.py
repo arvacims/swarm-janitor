@@ -1,10 +1,11 @@
 import base64
 import logging
+from dataclasses import dataclass
 from typing import Dict, List, Optional
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
-from swarmjanitor.dockerclient import JanitorDockerClient, JoinTokens, LoginData, NodeState, SwarmInfo
+from swarmjanitor.dockerclient import JanitorDockerClient, LoginData, NodeState, SwarmInfo
 
 
 class JanitorError(RuntimeError):
@@ -20,6 +21,13 @@ class SwarmManagerError(JanitorError):
 
 class SwarmLeaderError(JanitorError):
     message = 'This node is not a swarm leader.'
+
+
+@dataclass(frozen=True)
+class JoinInfo:
+    address: str
+    manager: str
+    worker: str
 
 
 class JanitorCore:
@@ -67,15 +75,21 @@ class JanitorCore:
         self.docker_client.refresh_login(auth)
         self.docker_client.update_all_services()
 
-    def join_tokens(self) -> JoinTokens:
-        if not _is_manager(self.docker_client.swarm_info()):
+    def join_info(self) -> JoinInfo:
+        swarm_info = self.docker_client.swarm_info()
+
+        if not _is_manager(swarm_info):
             raise SwarmManagerError
-        return self.docker_client.join_tokens()
+
+        node_info = self.docker_client.node_info(swarm_info.node_id)
+        join_tokens = self.docker_client.join_tokens()
+
+        return JoinInfo(address=node_info.addr, manager=join_tokens.manager, worker=join_tokens.worker)
 
     def _discover_possible_manager_addresses(self) -> List[str]:
         return JanitorAwsClient.discover_possible_manager_addresses(self.config.manager_name_filter)
 
-    def debug_info(self) -> Dict:
+    def system_info(self) -> Dict:
         swarm_info = self.docker_client.swarm_info()
         return {
             'isSwarmActive': _is_swarm_active(swarm_info),
