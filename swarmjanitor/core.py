@@ -131,10 +131,12 @@ class JanitorCore:
                 join_token = join_info.manager if desired_role == DesiredRole.MANAGER else join_info.worker
 
                 logging.info('Joining the swarm via %s using the token "%s" ...', join_address, join_token)
-                # TODO: Implement this!
+                if not self.docker_client.join_swarm(join_address, join_token):
+                    raise RuntimeError('Failed to join the swarm.')
+
                 return
             except:
-                logging.warning('Joining the swarm via %s failed.', manager_address, exc_info=True)
+                logging.warning('Failed to join the swarm via %s.', manager_address, exc_info=True)
                 continue
 
     def join_info(self) -> JoinInfo:

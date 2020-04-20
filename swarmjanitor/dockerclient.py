@@ -109,3 +109,6 @@ class JanitorDockerClient:
             logging.info('Updating the service "%s" ...', service.name)
             update_status = service.update()
             logging.info('Warnings: %s', update_status['Warnings'])
+
+    def join_swarm(self, address: str, join_token: str) -> bool:
+        return self.client.swarm.join(remote_addrs=[address], join_token=join_token)
