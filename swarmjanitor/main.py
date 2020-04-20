@@ -1,5 +1,6 @@
 import argparse
 import logging
+import time
 
 import swarmjanitor.version
 from swarmjanitor.awsclient import JanitorAwsClient
@@ -31,6 +32,7 @@ def run():
     shutdown_handler = ShutdownHandler([server, scheduler])
 
     try:
+        time.sleep(5)
         core.assume_desired_role()
     except:
         logging.warning('Failed to assume role.')
