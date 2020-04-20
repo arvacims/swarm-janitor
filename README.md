@@ -15,19 +15,15 @@ Docker Swarm Janitor is one light-weight daemon process deployed as some Docker 
 
 ## Usage
 
-In production environments, use an instance profile instead of the access key.
-
 Include this command in your user data script:
 ~~~~
 $ docker run \
-    --env "AWS_ACCESS_KEY_ID=********************" \
-    --env "AWS_SECRET_ACCESS_KEY=****************************************" \
     --env "AWS_DEFAULT_REGION=eu-west-1" \
-    --env "SWARM_REGISTRY=************.dkr.ecr.eu-west-1.amazonaws.com" \
+    --env "SWARM_REGISTRY=000000000000.dkr.ecr.eu-west-1.amazonaws.com" \
     --env "SWARM_DESIRED_ROLE=worker" \
     --env "SWARM_MANAGER_NAME_FILTER=foo-bar-manager" \
-    --env "SWARM_INTERVAL_ASSUME_ROLE=240" \
-    --env "SWARM_INTERVAL_PRUNE_NODES=120" \
+    --env "SWARM_INTERVAL_ASSUME_ROLE=600" \
+    --env "SWARM_INTERVAL_PRUNE_NODES=300" \
     --env "SWARM_INTERVAL_PRUNE_SYSTEM=86400" \
     --env "SWARM_INTERVAL_REFRESH_AUTH=36000" \
     --env "SWARM_PRUNE_IMAGES=true" \
@@ -63,16 +59,14 @@ $ pipenv run pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml -
 
 Run the application from source.
 ~~~~
-$ export AWS_ACCESS_KEY_ID=********************
-$ export AWS_SECRET_ACCESS_KEY=****************************************
 $ export AWS_DEFAULT_REGION=eu-west-1
-$ export SWARM_REGISTRY=************.dkr.ecr.eu-west-1.amazonaws.com
+$ export SWARM_REGISTRY=000000000000.dkr.ecr.eu-west-1.amazonaws.com
 $ export SWARM_DESIRED_ROLE=worker
 $ export SWARM_MANAGER_NAME_FILTER=foo-bar-manager
 $ export SWARM_INTERVAL_ASSUME_ROLE=60
 $ export SWARM_INTERVAL_PRUNE_NODES=30
-$ export SWARM_INTERVAL_PRUNE_SYSTEM=300
-$ export SWARM_INTERVAL_REFRESH_AUTH=300
+$ export SWARM_INTERVAL_PRUNE_SYSTEM=120
+$ export SWARM_INTERVAL_REFRESH_AUTH=90
 $ export SWARM_PRUNE_IMAGES=false
 $ export SWARM_PRUNE_VOLUMES=false
 $ pipenv run ./swarm-janitor.py
