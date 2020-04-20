@@ -160,7 +160,14 @@ class JanitorCore:
                 continue
 
             try:
-                logging.info('Node %s is not ready. Removing it ...', node_id)
+                logging.info('Node %s is NOT ready.', node_id)
+
+                if node.is_manager:
+                    logging.info('Demoting manager node %s ...', node_id)
+                    self.docker_client.demote_node(node_id)
+                    continue
+
+                logging.info('Removing worker node %s ...', node_id)
                 self.docker_client.remove_node(node_id)
             except:
                 logging.warning('Failed to remove the node %s.', node_id, exc_info=True)

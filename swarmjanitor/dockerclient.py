@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 import docker
 from docker import DockerClient
+from docker.models.nodes import Node
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,12 @@ class JanitorDockerClient:
 
     def remove_node(self, node_id: str):
         self.client.api.remove_node(node_id=node_id, force=True)
+
+    def demote_node(self, node_id: str):
+        node: Node = self.client.nodes.get(node_id)
+        spec: Dict = node.attrs['Spec']
+        spec['Role'] = 'worker'
+        node.update(node_spec=spec)
 
     def swarm_info(self) -> SwarmInfo:
         def remote_managers(manager_dicts: Optional[List[Dict]]) -> List[ManagerInfo]:
