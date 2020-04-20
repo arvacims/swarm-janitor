@@ -4,17 +4,14 @@ import json
 import logging
 from enum import Enum
 from threading import Thread
-from typing import Dict
+from typing import List
 
+import bottle
 from bottle import Bottle, HTTPError
 
 from swarmjanitor.core import JanitorCore, JanitorError
-from swarmjanitor.scheduler import JanitorScheduler
+from swarmjanitor.scheduler import JanitorScheduler, JobInfo
 from swarmjanitor.shutdown import Stoppable
-
-
-def _health() -> Dict:
-    return {'status': 'UP'}
 
 
 class SmartEncoder(json.JSONEncoder):
@@ -42,6 +39,12 @@ def json_response(error_status: int = 500):
     return json_decorator
 
 
+@dataclasses.dataclass(frozen=True)
+class HealthInfo:
+    status: str
+    jobs: List[JobInfo]
+
+
 class JanitorServer(Stoppable):
     app: Bottle
     thread: Thread
@@ -58,10 +61,9 @@ class JanitorServer(Stoppable):
         self._register_routes()
 
     def _register_routes(self):
-        self.app.get(path='/health', callback=_health)
-        self.app.get(path='/jobs', callback=self._jobs)
-        self.app.get(path='/join', callback=json_response(400)(self.core.join_info))
+        self.app.get(path='/health', callback=json_response()(self._health))
         self.app.get(path='/system', callback=json_response()(self.core.system_info))
+        self.app.get(path='/join', callback=json_response(400)(self.core.join_info))
 
     def _run_server(self):
         logging.info('Starting server ...')
@@ -80,5 +82,18 @@ class JanitorServer(Stoppable):
         janitor_server._start_daemon()
         return janitor_server
 
-    def _jobs(self) -> Dict:
-        return {'job_list': self.scheduler.list_jobs()}
+    def _health(self) -> HealthInfo:
+        jobs = self.scheduler.list_jobs()
+
+        status_word = 'UP'
+        status_code = 200
+
+        if len(jobs) != 4:
+            status_word = 'WARN'
+            status_code = 500
+
+        bottle.response.status = status_code
+        return HealthInfo(
+            status=status_word,
+            jobs=jobs
+        )

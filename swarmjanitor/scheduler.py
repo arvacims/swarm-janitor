@@ -1,7 +1,8 @@
 import functools
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass
+from typing import Any, List, Optional
 
 from schedule import CancelJob, Job, Scheduler
 
@@ -31,24 +32,37 @@ def scheduled(catch_exceptions: bool = True, cancel_on_failure: bool = False):
     return scheduled_decorator
 
 
-def _job_to_dict(job: Job) -> Dict:
+@dataclass(frozen=True)
+class JobInfo:
+    name: str
+    interval: Optional[int]
+    latest: Optional[str]
+    unit: Optional[str]
+    at_time: Optional[str]
+    last_run: Optional[str]
+    next_run: Optional[str]
+    period: Optional[str]
+    start_day: Optional[str]
+
+
+def _as_job_info(job: Job) -> JobInfo:
     def _int_or_none(value: Any) -> Optional[int]:
         return None if value is None else int(value)
 
     def _str_or_none(value: Any) -> Optional[str]:
         return None if value is None else str(value)
 
-    return {
-        'name': job.job_func.__name__,
-        'interval': _int_or_none(job.interval),
-        'latest': _str_or_none(job.latest),
-        'unit': _str_or_none(job.unit),
-        'atTime': _str_or_none(job.at_time),
-        'lastRun': _str_or_none(job.last_run),
-        'nextRun': _str_or_none(job.next_run),
-        'period': _str_or_none(job.period),
-        'startDay': _str_or_none(job.start_day),
-    }
+    return JobInfo(
+        name=job.job_func.__name__,
+        interval=_int_or_none(job.interval),
+        latest=_str_or_none(job.latest),
+        unit=_str_or_none(job.unit),
+        at_time=_str_or_none(job.at_time),
+        last_run=_str_or_none(job.last_run),
+        next_run=_str_or_none(job.next_run),
+        period=_str_or_none(job.period),
+        start_day=_str_or_none(job.start_day),
+    )
 
 
 class JanitorScheduler(Scheduler, Stoppable):
@@ -74,8 +88,8 @@ class JanitorScheduler(Scheduler, Stoppable):
         self.clear()
         logging.info('Cleared all jobs.')
 
-    def list_jobs(self) -> List[Dict]:
-        return [_job_to_dict(job) for job in self.jobs]
+    def list_jobs(self) -> List[JobInfo]:
+        return [_as_job_info(job) for job in self.jobs]
 
     def tick(self):
         time.sleep(self.tick_seconds)
