@@ -152,6 +152,9 @@ class JanitorCore:
                 continue
 
     def prune_nodes(self):
+        if not self._is_leader():
+            raise SwarmLeaderError
+
         for node in self._list_nodes():
             node_id = node.node_id
 
@@ -172,6 +175,12 @@ class JanitorCore:
             except:
                 logging.warning('Failed to remove the node %s.', node_id, exc_info=True)
                 continue
+
+    def prune_nodes_skip(self):
+        try:
+            self.prune_nodes()
+        except JanitorError as error:
+            logging.info('Skipped pruning nodes: %s', error.message)
 
     def join_info(self) -> JoinInfo:
         swarm_info = self.docker_client.swarm_info()
