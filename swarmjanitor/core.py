@@ -49,6 +49,10 @@ class JanitorCore:
         self.aws_client = aws_client
         self.docker_client = docker_client
 
+    def _discover_possible_manager_addresses(self) -> List[str]:
+        self.aws_client.refresh_session()
+        return self.aws_client.discover_possible_manager_addresses(self.config.manager_name_filter)
+
     def _request_docker_auth(self) -> LoginData:
         self.aws_client.refresh_session()
         ecr_auth_token = self.aws_client.request_auth_token()
@@ -76,18 +80,18 @@ class JanitorCore:
         if self.config.prune_volumes:
             self.docker_client.prune_volumes()
 
-    def refresh_auth_skip(self):
-        try:
-            self.refresh_auth()
-        except JanitorError as error:
-            logging.info('Skipped refreshing authentication: %s', error.message)
-
     def refresh_auth(self):
         if not self._is_leader():
             raise SwarmLeaderError
         auth = self._request_docker_auth()
         self.docker_client.refresh_login(auth)
         self.docker_client.update_all_services()
+
+    def refresh_auth_skip(self):
+        try:
+            self.refresh_auth()
+        except JanitorError as error:
+            logging.info('Skipped refreshing authentication: %s', error.message)
 
     def join_info(self) -> JoinInfo:
         swarm_info = self.docker_client.swarm_info()
@@ -99,10 +103,6 @@ class JanitorCore:
         join_tokens = self.docker_client.join_tokens()
 
         return JoinInfo(address=node_info.addr, manager=join_tokens.manager, worker=join_tokens.worker)
-
-    def _discover_possible_manager_addresses(self) -> List[str]:
-        self.aws_client.refresh_session()
-        return self.aws_client.discover_possible_manager_addresses(self.config.manager_name_filter)
 
     def system_info(self) -> SystemInfo:
         swarm_info = self.docker_client.swarm_info()
