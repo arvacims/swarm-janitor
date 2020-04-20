@@ -22,8 +22,12 @@ class ManagerInfo:
 
 @unique
 class NodeState(Enum):
-    ACTIVE = 'active'
+    NONE = ''
     INACTIVE = 'inactive'
+    PENDING = 'pending'
+    ACTIVE = 'active'
+    ERROR = 'error'
+    LOCKED = 'locked'
 
 
 @dataclass(frozen=True)
