@@ -2,6 +2,7 @@ import argparse
 import logging
 
 import swarmjanitor.version
+from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import JanitorConfig
 from swarmjanitor.core import JanitorCore
 from swarmjanitor.dockerclient import JanitorDockerClient
@@ -21,8 +22,9 @@ def run():
     logging.basicConfig(format='%(levelname)-8.8s [%(threadName)10.10s] %(message)s', level='INFO')
 
     config = JanitorConfig()
+    aws_client = JanitorAwsClient()
     docker_client = JanitorDockerClient()
-    core = JanitorCore(config, docker_client)
+    core = JanitorCore(config, aws_client, docker_client)
     scheduler = JanitorScheduler(config, core)
     server = JanitorServer.start(core, scheduler)
 

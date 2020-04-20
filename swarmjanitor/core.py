@@ -41,15 +41,20 @@ class SystemInfo:
 
 class JanitorCore:
     config: JanitorConfig
+    aws_client: JanitorAwsClient
     docker_client: JanitorDockerClient
 
-    def __init__(self, config: JanitorConfig, docker_client: JanitorDockerClient):
+    def __init__(self, config: JanitorConfig, aws_client: JanitorAwsClient, docker_client: JanitorDockerClient):
         self.config = config
+        self.aws_client = aws_client
         self.docker_client = docker_client
 
     def _request_docker_auth(self) -> LoginData:
-        ecr_auth_token = JanitorAwsClient.request_auth_token()
+        self.aws_client.refresh_session()
+        ecr_auth_token = self.aws_client.request_auth_token()
+
         user_and_pass = base64.b64decode(ecr_auth_token).decode('UTF-8').split(':')
+
         return LoginData(
             username=user_and_pass[0],
             password=user_and_pass[1],
@@ -96,7 +101,8 @@ class JanitorCore:
         return JoinInfo(address=node_info.addr, manager=join_tokens.manager, worker=join_tokens.worker)
 
     def _discover_possible_manager_addresses(self) -> List[str]:
-        return JanitorAwsClient.discover_possible_manager_addresses(self.config.manager_name_filter)
+        self.aws_client.refresh_session()
+        return self.aws_client.discover_possible_manager_addresses(self.config.manager_name_filter)
 
     def system_info(self) -> SystemInfo:
         swarm_info = self.docker_client.swarm_info()

@@ -31,6 +31,26 @@ def scheduled(catch_exceptions: bool = True, cancel_on_failure: bool = False):
     return scheduled_decorator
 
 
+def _job_to_dict(job: Job) -> Dict:
+    def _int_or_none(value: Any) -> Optional[int]:
+        return None if value is None else int(value)
+
+    def _str_or_none(value: Any) -> Optional[str]:
+        return None if value is None else str(value)
+
+    return {
+        'name': job.job_func.__name__,
+        'interval': _int_or_none(job.interval),
+        'latest': _str_or_none(job.latest),
+        'unit': _str_or_none(job.unit),
+        'atTime': _str_or_none(job.at_time),
+        'lastRun': _str_or_none(job.last_run),
+        'nextRun': _str_or_none(job.next_run),
+        'period': _str_or_none(job.period),
+        'startDay': _str_or_none(job.start_day),
+    }
+
+
 class JanitorScheduler(Scheduler, Stoppable):
     tick_seconds: int = 1
     config: JanitorConfig
@@ -53,27 +73,7 @@ class JanitorScheduler(Scheduler, Stoppable):
         logging.info('Cleared all jobs.')
 
     def list_jobs(self) -> List[Dict]:
-        return [JanitorScheduler._job_to_dict(job) for job in self.jobs]
+        return [_job_to_dict(job) for job in self.jobs]
 
     def tick(self):
         time.sleep(self.tick_seconds)
-
-    @staticmethod
-    def _job_to_dict(job: Job) -> Dict:
-        def _int_or_none(value: Any) -> Optional[int]:
-            return None if value is None else int(value)
-
-        def _str_or_none(value: Any) -> Optional[str]:
-            return None if value is None else str(value)
-
-        return {
-            'name': job.job_func.__name__,
-            'interval': _int_or_none(job.interval),
-            'latest': _str_or_none(job.latest),
-            'unit': _str_or_none(job.unit),
-            'atTime': _str_or_none(job.at_time),
-            'lastRun': _str_or_none(job.last_run),
-            'nextRun': _str_or_none(job.next_run),
-            'period': _str_or_none(job.period),
-            'startDay': _str_or_none(job.start_day),
-        }

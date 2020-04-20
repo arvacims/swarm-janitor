@@ -6,15 +6,20 @@ from swarmjanitor.utils import flatten_list
 
 
 class JanitorAwsClient:
+    _session: Session
 
-    @staticmethod
-    def request_auth_token() -> str:
-        token_dict = _new_session().client('ecr').get_authorization_token()
+    def __init__(self):
+        self.refresh_session()
+
+    def refresh_session(self):
+        self._session = Session()
+
+    def request_auth_token(self) -> str:
+        token_dict = self._session.client('ecr').get_authorization_token()
         return token_dict['authorizationData'][0]['authorizationToken']
 
-    @staticmethod
-    def discover_possible_manager_addresses(name_filter: str) -> List[str]:
-        description = _new_session().client('ec2').describe_instances(
+    def discover_possible_manager_addresses(self, name_filter: str) -> List[str]:
+        description = self._session.client('ec2').describe_instances(
             Filters=[
                 {'Name': 'tag:Name', 'Values': [name_filter]},
                 {'Name': 'instance-state-name', 'Values': ['running']}
@@ -26,7 +31,3 @@ class JanitorAwsClient:
         instances: List[Dict] = flatten_list(reservation_instances)
 
         return [instance['PrivateIpAddress'] for instance in instances]
-
-
-def _new_session() -> Session:
-    return Session()
