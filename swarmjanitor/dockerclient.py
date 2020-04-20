@@ -48,9 +48,10 @@ class NodeState(Enum):
 @dataclass(frozen=True)
 class NodeInfo:
     node_id: str
-    addr: str
     status: NodeState
-    is_leader: bool
+    is_manager: bool
+    manager_address: Optional[str]
+    manager_is_leader: Optional[bool]
 
 
 @dataclass(frozen=True)
@@ -126,10 +127,17 @@ class JanitorDockerClient:
 
 
 def _as_node_info(node_dict: Dict) -> NodeInfo:
-    manager_status: Dict = node_dict['ManagerStatus']
+    opt_manager_status: Optional[Dict] = node_dict.get('ManagerStatus', None)
+
+    is_manager = opt_manager_status is not None
+
+    manager_address = opt_manager_status['Addr'] if is_manager else None
+    manager_is_leader = opt_manager_status.get('Leader', False) if is_manager else None
+
     return NodeInfo(
         node_id=node_dict['ID'],
-        addr=manager_status['Addr'],
         status=NodeState(node_dict['Status']['State']),
-        is_leader=manager_status.get('Leader', False)
+        is_manager=is_manager,
+        manager_address=manager_address,
+        manager_is_leader=manager_is_leader
     )

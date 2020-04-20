@@ -86,7 +86,7 @@ class JanitorCore:
         if not _is_manager(swarm_info):
             return False
 
-        return self.docker_client.node_info(swarm_info.node_id).is_leader
+        return self.docker_client.node_info(swarm_info.node_id).manager_is_leader
 
     def prune_system(self):
         self.docker_client.prune_containers()
@@ -175,7 +175,7 @@ class JanitorCore:
         node_info = self.docker_client.node_info(swarm_info.node_id)
         join_tokens = self.docker_client.join_tokens()
 
-        return JoinInfo(address=node_info.addr, manager=join_tokens.manager, worker=join_tokens.worker)
+        return JoinInfo(address=node_info.manager_address, manager=join_tokens.manager, worker=join_tokens.worker)
 
     def system_info(self) -> SystemInfo:
         swarm_info = self.docker_client.swarm_info()
