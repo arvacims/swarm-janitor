@@ -119,7 +119,12 @@ class JanitorCore:
 
         for manager_address in manager_addresses:
             try:
-                response = requests.get('http://%s:2380/join' % manager_address)
+                url = 'http://%s:2380/join' % manager_address
+                response = requests.get(url)
+                status_code = response.status_code
+                logging.info('GET "%s" %s', url, status_code)
+                response.raise_for_status()
+
                 join_info = JoinInfo(**response.json())
 
                 join_address = join_info.address
