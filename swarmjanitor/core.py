@@ -7,7 +7,7 @@ import requests
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import DesiredRole, JanitorConfig
-from swarmjanitor.dockerclient import JanitorDockerClient, LocalNodeState, LoginData, NodeInfo, SwarmInfo
+from swarmjanitor.dockerclient import JanitorDockerClient, LocalNodeState, LoginData, NodeInfo, NodeState, SwarmInfo
 
 
 class JanitorError(RuntimeError):
@@ -149,6 +149,21 @@ class JanitorCore:
                 return
             except:
                 logging.warning('Failed to join the swarm via %s.', manager_address, exc_info=True)
+                continue
+
+    def prune_nodes(self):
+        for node in self._list_nodes():
+            node_id = node.node_id
+
+            if node.status == NodeState.READY:
+                logging.info('Node %s is ready. No action is required.', node_id)
+                continue
+
+            try:
+                logging.info('Node %s is not ready. Removing it ...', node_id)
+                self.docker_client.remove_node(node_id)
+            except:
+                logging.warning('Failed to remove the node %s.', node_id, exc_info=True)
                 continue
 
     def join_info(self) -> JoinInfo:

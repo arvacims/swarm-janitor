@@ -19,6 +19,7 @@ class JanitorConfig:
     desired_role: DesiredRole = DesiredRole(os.environ['SWARM_DESIRED_ROLE'])
     manager_name_filter: str = os.environ['SWARM_MANAGER_NAME_FILTER']
     interval_assume_role: int = int(os.environ['SWARM_INTERVAL_ASSUME_ROLE'])
+    interval_prune_nodes: int = int(os.environ['SWARM_INTERVAL_PRUNE_NODES'])
     interval_prune_system: int = int(os.environ['SWARM_INTERVAL_PRUNE_SYSTEM'])
     interval_refresh_auth: int = int(os.environ['SWARM_INTERVAL_REFRESH_AUTH'])
     prune_images: bool = _str_to_bool(os.environ['SWARM_PRUNE_IMAGES'])
