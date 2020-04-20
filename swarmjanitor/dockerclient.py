@@ -133,7 +133,7 @@ class JanitorDockerClient:
         self.client.swarm.join(remote_addrs=[address], join_token=join_token)
 
     def leave_swarm(self):
-        self.client.swarm.leave(force=True)
+        self.client.api.leave_swarm(force=True)
 
 
 def _as_node_info(node_dict: Dict) -> NodeInfo:
