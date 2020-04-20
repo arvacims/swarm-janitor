@@ -132,6 +132,9 @@ class JanitorDockerClient:
     def join_swarm(self, address: str, join_token: str):
         self.client.swarm.join(remote_addrs=[address], join_token=join_token)
 
+    def leave_swarm(self):
+        self.client.swarm.leave(force=True)
+
 
 def _as_node_info(node_dict: Dict) -> NodeInfo:
     opt_manager_status: Optional[Dict] = node_dict.get('ManagerStatus', None)

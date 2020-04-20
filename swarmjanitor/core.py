@@ -117,6 +117,12 @@ class JanitorCore:
         logging.info('Assuming %s role ...', desired_role.value)
         swarm_info = self.docker_client.swarm_info()
 
+        local_node_state = swarm_info.local_node_state
+        if local_node_state in [LocalNodeState.PENDING, LocalNodeState.ERROR]:
+            logging.warning('The local node state is "%s". Leaving swarm ...', local_node_state)
+            self.docker_client.leave_swarm()
+            self.prune_system()
+
         matches_manager = desired_role == DesiredRole.MANAGER and _is_manager(swarm_info)
         matches_worker = desired_role == DesiredRole.WORKER and _is_worker(swarm_info)
 
