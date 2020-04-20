@@ -5,24 +5,19 @@ Docker Swarm Janitor executes maintenance tasks for your Docker Swarm cluster wh
 * is using Amazon ECR as private Docker registry.
 
 
-## Features (production ready)
+## Features
 
-Docker Swarm Janitor is a light-weight daemon process deployed as Docker image (see below) which
+Docker Swarm Janitor is one light-weight daemon process deployed as some Docker image (see below) which
 * executes `docker system prune --force [--all] [--volumes]` at the configured rate,
 * executes `docker login` (into your ECR) and `docker service update --with-registry-auth` at the configured rate.
-
-
-## Features (announced)
-
-Docker Swarm Janitor automatically
-* discovers manager nodes,
-* retrieves join tokens, and
-* ensures all nodes (re-)join the cluster.
+* lets nodes (spawned by your ASG) join the cluster automatically and prune dead nodes from the swarm.
 
 
 ## Usage
 
 In production environments, use an instance profile instead of the access key.
+
+Include this command in your user data script:
 ~~~~
 $ docker run \
     --env "AWS_ACCESS_KEY_ID=********************" \
