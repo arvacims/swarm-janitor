@@ -3,8 +3,10 @@ import logging
 from dataclasses import dataclass
 from typing import List, Optional
 
+import requests
+
 from swarmjanitor.awsclient import JanitorAwsClient
-from swarmjanitor.config import JanitorConfig
+from swarmjanitor.config import DesiredRole, JanitorConfig
 from swarmjanitor.dockerclient import JanitorDockerClient, LoginData, NodeState, SwarmInfo
 
 
@@ -21,6 +23,10 @@ class SwarmManagerError(JanitorError):
 
 class SwarmLeaderError(JanitorError):
     message = 'This node is not a swarm leader.'
+
+
+class SwarmRoleError(JanitorError):
+    message = 'Swarm is active but the desired role does not match.'
 
 
 @dataclass(frozen=True)
@@ -92,6 +98,39 @@ class JanitorCore:
             self.refresh_auth()
         except JanitorError as error:
             logging.info('Skipped refreshing authentication: %s', error.message)
+
+    def assume_desired_role(self):
+        desired_role = self.config.desired_role
+        logging.info('Assuming %s role ...', desired_role.value)
+        swarm_info = self.docker_client.swarm_info()
+
+        matches_manager = desired_role == DesiredRole.MANAGER and _is_manager(swarm_info)
+        matches_worker = desired_role == DesiredRole.WORKER and _is_worker(swarm_info)
+
+        if matches_manager or matches_worker:
+            logging.info('No action is required.')
+            return
+
+        if _is_swarm_active(swarm_info):
+            raise SwarmRoleError
+
+        manager_addresses = self._discover_possible_manager_addresses()
+        logging.info('Discovered possible manager nodes: %s', manager_addresses)
+
+        for manager_address in manager_addresses:
+            try:
+                response = requests.get('http://%s:2380/join' % manager_address)
+                join_info = JoinInfo(**response.json())
+
+                join_address = join_info.address
+                join_token = join_info.manager if desired_role == DesiredRole.MANAGER else join_info.worker
+
+                logging.info('Joining the swarm via %s using the token "%s" ...', join_address, join_token)
+                # TODO: Implement this!
+                return
+            except:
+                logging.warning('Joining the swarm via %s failed.', manager_address, exc_info=True)
+                continue
 
     def join_info(self) -> JoinInfo:
         swarm_info = self.docker_client.swarm_info()
