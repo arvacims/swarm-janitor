@@ -29,6 +29,8 @@ $ docker run \
     --env "AWS_SECRET_ACCESS_KEY=****************************************" \
     --env "AWS_DEFAULT_REGION=eu-west-1" \
     --env "SWARM_REGISTRY=************.dkr.ecr.eu-west-1.amazonaws.com" \
+    --env "SWARM_DESIRED_ROLE=worker" \
+    --env "SWARM_MANAGER_NAME_FILTER=foo-bar-manager" \
     --env "SWARM_INTERVAL_PRUNE_SYSTEM=86400" \
     --env "SWARM_INTERVAL_REFRESH_AUTH=36000" \
     --env "SWARM_PRUNE_IMAGES=true" \
@@ -68,6 +70,7 @@ $ export AWS_ACCESS_KEY_ID=********************
 $ export AWS_SECRET_ACCESS_KEY=****************************************
 $ export AWS_DEFAULT_REGION=eu-west-1
 $ export SWARM_REGISTRY=************.dkr.ecr.eu-west-1.amazonaws.com
+$ export SWARM_DESIRED_ROLE=worker
 $ export SWARM_MANAGER_NAME_FILTER=foo-bar-manager
 $ export SWARM_INTERVAL_PRUNE_SYSTEM=300
 $ export SWARM_INTERVAL_REFRESH_AUTH=300
