@@ -1,5 +1,8 @@
+import dataclasses
 import functools
+import json
 import logging
+from enum import Enum
 from threading import Thread
 from typing import Dict
 
@@ -14,12 +17,23 @@ def _health() -> Dict:
     return {'status': 'UP'}
 
 
-def json(error_status: int = 500):
+class SmartEncoder(json.JSONEncoder):
+    def default(self, o):
+        if dataclasses.is_dataclass(o):
+            return dataclasses.asdict(o)
+
+        if isinstance(o, Enum):
+            return o.value
+
+        return super().default(o)
+
+
+def json_response(error_status: int = 500):
     def json_decorator(request_func):
         @functools.wraps(request_func)
         def wrapper(*args, **kwargs):
             try:
-                return vars(request_func(*args, **kwargs))
+                return json.dumps(request_func(*args, **kwargs), cls=SmartEncoder)
             except JanitorError as error:
                 raise HTTPError(status=error_status, body=error.message)
 
@@ -46,8 +60,8 @@ class JanitorServer(Stoppable):
     def _register_routes(self):
         self.app.get(path='/health', callback=_health)
         self.app.get(path='/jobs', callback=self._jobs)
-        self.app.get(path='/join', callback=json(400)(self.core.join_info))
-        self.app.get(path='/system', callback=json()(self.core.system_info))
+        self.app.get(path='/join', callback=json_response(400)(self.core.join_info))
+        self.app.get(path='/system', callback=json_response()(self.core.system_info))
 
     def _run_server(self):
         logging.info('Starting server ...')

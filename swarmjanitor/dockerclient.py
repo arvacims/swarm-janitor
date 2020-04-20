@@ -21,7 +21,7 @@ class ManagerInfo:
 
 
 @unique
-class NodeState(Enum):
+class LocalNodeState(Enum):
     NONE = ''
     INACTIVE = 'inactive'
     PENDING = 'pending'
@@ -32,16 +32,24 @@ class NodeState(Enum):
 
 @dataclass(frozen=True)
 class SwarmInfo:
-    local_node_state: NodeState
+    local_node_state: LocalNodeState
     node_id: str
     remote_managers: List[ManagerInfo]
+
+
+@unique
+class NodeState(Enum):
+    UNKNOWN = 'unknown'
+    DOWN = 'down'
+    READY = 'ready'
+    DISCONNECTED = 'disconnected'
 
 
 @dataclass(frozen=True)
 class NodeInfo:
     node_id: str
     addr: str
-    status: str
+    status: NodeState
     is_leader: bool
 
 
@@ -55,14 +63,13 @@ class JanitorDockerClient:
     client: DockerClient = docker.from_env()
 
     def node_info(self, node_id: str) -> NodeInfo:
-        node_dict = self.client.nodes.get(node_id).attrs
-        manager_status: Dict = node_dict['ManagerStatus']
-        return NodeInfo(
-            node_id=node_dict['ID'],
-            addr=manager_status['Addr'],
-            status=node_dict['Status']['State'],
-            is_leader=manager_status.get('Leader', False)
-        )
+        return _as_node_info(self.client.nodes.get(node_id).attrs)
+
+    def list_nodes(self) -> List[NodeInfo]:
+        return [_as_node_info(node.attrs) for node in self.client.nodes.list()]
+
+    def remove_node(self, node_id: str):
+        self.client.api.remove_node(node_id=node_id, force=True)
 
     def swarm_info(self) -> SwarmInfo:
         def remote_managers(manager_dicts: Optional[List[Dict]]) -> List[ManagerInfo]:
@@ -72,7 +79,7 @@ class JanitorDockerClient:
 
         swarm_dict: Dict = self.client.info()['Swarm']
         return SwarmInfo(
-            local_node_state=NodeState(swarm_dict['LocalNodeState']),
+            local_node_state=LocalNodeState(swarm_dict['LocalNodeState']),
             node_id=swarm_dict['NodeID'],
             remote_managers=remote_managers(swarm_dict['RemoteManagers'])
         )
@@ -114,5 +121,15 @@ class JanitorDockerClient:
             update_status = service.update()
             logging.info('Warnings: %s', update_status['Warnings'])
 
-    def join_swarm(self, address: str, join_token: str) -> bool:
-        return self.client.swarm.join(remote_addrs=[address], join_token=join_token)
+    def join_swarm(self, address: str, join_token: str):
+        self.client.swarm.join(remote_addrs=[address], join_token=join_token)
+
+
+def _as_node_info(node_dict: Dict) -> NodeInfo:
+    manager_status: Dict = node_dict['ManagerStatus']
+    return NodeInfo(
+        node_id=node_dict['ID'],
+        addr=manager_status['Addr'],
+        status=NodeState(node_dict['Status']['State']),
+        is_leader=manager_status.get('Leader', False)
+    )

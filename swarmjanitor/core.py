@@ -1,13 +1,13 @@
 import base64
 import logging
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 
 import requests
 
 from swarmjanitor.awsclient import JanitorAwsClient
 from swarmjanitor.config import DesiredRole, JanitorConfig
-from swarmjanitor.dockerclient import JanitorDockerClient, LoginData, NodeState, SwarmInfo
+from swarmjanitor.dockerclient import JanitorDockerClient, LocalNodeState, LoginData, NodeInfo, SwarmInfo
 
 
 class JanitorError(RuntimeError):
@@ -42,6 +42,7 @@ class SystemInfo:
     is_manager: bool
     is_worker: bool
     is_leader: bool
+    nodes: List[NodeInfo]
     possible_manager_nodes: List[str]
 
 
@@ -71,9 +72,21 @@ class JanitorCore:
             registry=self.config.registry
         )
 
-    def _is_leader(self, opt_swarm_info: Optional[SwarmInfo] = None) -> bool:
-        swarm_info: SwarmInfo = self.docker_client.swarm_info() if opt_swarm_info is None else opt_swarm_info
-        return _is_manager(swarm_info) and self.docker_client.node_info(swarm_info.node_id).is_leader
+    def _list_nodes(self) -> List[NodeInfo]:
+        swarm_info = self.docker_client.swarm_info()
+
+        if not _is_manager(swarm_info):
+            return []
+
+        return self.docker_client.list_nodes()
+
+    def _is_leader(self) -> bool:
+        swarm_info = self.docker_client.swarm_info()
+
+        if not _is_manager(swarm_info):
+            return False
+
+        return self.docker_client.node_info(swarm_info.node_id).is_leader
 
     def prune_system(self):
         self.docker_client.prune_containers()
@@ -131,8 +144,7 @@ class JanitorCore:
                 join_token = join_info.manager if desired_role == DesiredRole.MANAGER else join_info.worker
 
                 logging.info('Joining the swarm via %s using the token "%s" ...', join_address, join_token)
-                if not self.docker_client.join_swarm(join_address, join_token):
-                    raise RuntimeError('Failed to join the swarm.')
+                self.docker_client.join_swarm(join_address, join_token)
 
                 return
             except:
@@ -156,13 +168,14 @@ class JanitorCore:
             is_swarm_active=_is_swarm_active(swarm_info),
             is_manager=_is_manager(swarm_info),
             is_worker=_is_worker(swarm_info),
-            is_leader=self._is_leader(swarm_info),
+            is_leader=self._is_leader(),
+            nodes=self._list_nodes(),
             possible_manager_nodes=self._discover_possible_manager_addresses()
         )
 
 
 def _is_swarm_active(swarm_info: SwarmInfo) -> bool:
-    return swarm_info.local_node_state == NodeState.ACTIVE
+    return swarm_info.local_node_state == LocalNodeState.ACTIVE
 
 
 def _is_manager(swarm_info: SwarmInfo) -> bool:
