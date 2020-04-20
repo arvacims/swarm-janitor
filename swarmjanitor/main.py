@@ -30,7 +30,7 @@ def run():
 
     shutdown_handler = ShutdownHandler([server, scheduler])
 
-    scheduler.run_all(delay_seconds=5)
+    core.assume_desired_role()
 
     logging.info('Starting scheduler loop ...')
     while not shutdown_handler.stop_now:
