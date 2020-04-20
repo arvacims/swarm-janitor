@@ -30,7 +30,10 @@ def run():
 
     shutdown_handler = ShutdownHandler([server, scheduler])
 
-    core.assume_desired_role()
+    try:
+        core.assume_desired_role()
+    except:
+        logging.warning('Failed to assume role.')
 
     logging.info('Starting scheduler loop ...')
     while not shutdown_handler.stop_now:
