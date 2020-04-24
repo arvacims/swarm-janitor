@@ -2,7 +2,6 @@ import dataclasses
 import functools
 import json
 import logging
-from enum import Enum
 from threading import Thread
 from typing import List
 
@@ -12,17 +11,7 @@ from bottle import Bottle, HTTPError
 from swarmjanitor.core import JanitorCore, JanitorError
 from swarmjanitor.scheduler import JanitorScheduler, JobInfo
 from swarmjanitor.shutdown import Stoppable
-
-
-class SmartEncoder(json.JSONEncoder):
-    def default(self, o):
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-
-        if isinstance(o, Enum):
-            return o.value
-
-        return super().default(o)
+from swarmjanitor.utils import SmartEncoder
 
 
 def json_response(error_status: int = 500):

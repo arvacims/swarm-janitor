@@ -15,12 +15,26 @@ class DesiredRole(Enum):
 
 @dataclass(frozen=True)
 class JanitorConfig:
-    registry: str = os.environ['SWARM_REGISTRY']
-    desired_role: DesiredRole = DesiredRole(os.environ['SWARM_DESIRED_ROLE'])
-    manager_name_filter: str = os.environ['SWARM_MANAGER_NAME_FILTER']
-    interval_assume_role: int = int(os.environ['SWARM_INTERVAL_ASSUME_ROLE'])
-    interval_prune_nodes: int = int(os.environ['SWARM_INTERVAL_PRUNE_NODES'])
-    interval_prune_system: int = int(os.environ['SWARM_INTERVAL_PRUNE_SYSTEM'])
-    interval_refresh_auth: int = int(os.environ['SWARM_INTERVAL_REFRESH_AUTH'])
-    prune_images: bool = _str_to_bool(os.environ['SWARM_PRUNE_IMAGES'])
-    prune_volumes: bool = _str_to_bool(os.environ['SWARM_PRUNE_VOLUMES'])
+    registry: str
+    desired_role: DesiredRole
+    manager_name_filter: str
+    interval_assume_role: int
+    interval_prune_nodes: int
+    interval_prune_system: int
+    interval_refresh_auth: int
+    prune_images: bool
+    prune_volumes: bool
+
+    @classmethod
+    def from_env(cls):
+        return cls(
+            registry=os.getenv('SWARM_REGISTRY', '000000000000.dkr.ecr.eu-west-1.amazonaws.com'),
+            desired_role=DesiredRole(os.getenv('SWARM_DESIRED_ROLE', 'manager')),
+            manager_name_filter=os.getenv('SWARM_MANAGER_NAME_FILTER', 'manager'),
+            interval_assume_role=int(os.getenv('SWARM_INTERVAL_ASSUME_ROLE', '600')),
+            interval_prune_nodes=int(os.getenv('SWARM_INTERVAL_PRUNE_NODES', '300')),
+            interval_prune_system=int(os.getenv('SWARM_INTERVAL_PRUNE_SYSTEM', '86400')),
+            interval_refresh_auth=int(os.getenv('SWARM_INTERVAL_REFRESH_AUTH', '36000')),
+            prune_images=_str_to_bool(os.getenv('SWARM_PRUNE_IMAGES', 'false')),
+            prune_volumes=_str_to_bool(os.getenv('SWARM_PRUNE_VOLUMES', 'false'))
+        )

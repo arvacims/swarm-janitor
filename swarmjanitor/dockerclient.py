@@ -146,7 +146,7 @@ class JanitorDockerClient:
             if auth_header is not None:
                 headers['X-Registry-Auth'] = auth_header
 
-        logging.info('Updating the service: url=%s, data=%s, headers=%s', url, service_spec, headers)
+        logging.debug('Updating the service: url=%s, data=%s, headers=%s', url, service_spec, headers)
         response = api_client._post_json(url=url, data=service_spec, params=params, headers=headers)
         return api_client._result(response, json=True)
 
