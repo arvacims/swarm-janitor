@@ -4,8 +4,9 @@ from enum import Enum, unique
 from typing import Dict, List, Optional
 
 import docker
-from docker import DockerClient
+from docker import DockerClient, auth
 from docker.models.nodes import Node
+from docker.models.services import Service
 
 
 @dataclass(frozen=True)
@@ -116,17 +117,43 @@ class JanitorDockerClient:
         volumes = self.client.volumes.prune()
         logging.info(volumes)
 
-    def refresh_login(self, auth: LoginData):
-        registry = auth.registry
+    def refresh_login(self, login_data: LoginData):
+        logging.info('Logging in to the Docker registry "%s" ...', login_data.registry)
 
-        logging.info('Logging in to the Docker registry "%s" ...', registry)
-        login_status = self.client.login(username=auth.username, password=auth.password, registry=registry, reauth=True)
+        login_status = self.client.login(
+            username=login_data.username,
+            password=login_data.password,
+            registry=login_data.registry,
+            reauth=True
+        )
+
         logging.info('Status: %s', login_status['Status'])
+
+    # noinspection PyProtectedMember
+    def update_service(self, service: Service) -> Dict:
+        api_client = self.client.api
+
+        url = api_client._url('/services/{0}/update', service.id)
+        params = {'version': service.version}
+        headers = {}
+
+        service_spec = service.attrs['Spec']
+        container_spec = service_spec['TaskTemplate'].get('ContainerSpec', {})
+        image = container_spec.get('Image', None)
+        if image is not None:
+            registry, repo_name = auth.resolve_repository_name(image)
+            auth_header = auth.get_config_header(api_client, registry)
+            if auth_header is not None:
+                headers['X-Registry-Auth'] = auth_header
+
+        logging.info('Updating the service: url=%s, data=%s, headers=%s', url, service_spec, headers)
+        response = api_client._post_json(url=url, data=service_spec, params=params, headers=headers)
+        return api_client._result(response, json=True)
 
     def update_all_services(self):
         for service in self.client.services.list():
             logging.info('Updating the service "%s" ...', service.name)
-            update_status = service.update()
+            update_status = self.update_service(service)
             logging.info('Warnings: %s', update_status['Warnings'])
 
     def join_swarm(self, address: str, join_token: str):
