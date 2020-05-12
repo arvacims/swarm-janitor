@@ -2,7 +2,6 @@ import argparse
 import json
 import logging
 import os
-import time
 
 import swarmjanitor.version
 from swarmjanitor.awsclient import JanitorAwsClient
@@ -39,12 +38,6 @@ def run():
     server = JanitorServer.start(core, scheduler)
 
     shutdown_handler = ShutdownHandler([server, scheduler])
-
-    try:
-        time.sleep(5)
-        core.assume_desired_role()
-    except:
-        logging.warning('Failed to assume role.')
 
     logging.info('Starting scheduler loop ...')
     while not shutdown_handler.stop_now:
