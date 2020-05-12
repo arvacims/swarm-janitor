@@ -18,29 +18,29 @@ Docker Swarm Janitor is one light-weight daemon process deployed as some Docker 
 Include this command in your user data script:
 ~~~~
 $ docker run \
-    --env "AWS_DEFAULT_REGION=eu-west-1" \
-    --env "SWARM_REGISTRY=000000000000.dkr.ecr.eu-west-1.amazonaws.com" \
-    --env "SWARM_DESIRED_ROLE=worker" \
-    --env "SWARM_MANAGER_NAME_FILTER=foo-bar-manager" \
-    --env "SWARM_INTERVAL_ASSUME_ROLE=600" \
-    --env "SWARM_INTERVAL_PRUNE_NODES=300" \
-    --env "SWARM_INTERVAL_PRUNE_SYSTEM=86400" \
-    --env "SWARM_INTERVAL_REFRESH_AUTH=36000" \
-    --env "SWARM_PRUNE_IMAGES=true" \
-    --env "SWARM_PRUNE_VOLUMES=true" \
-    --detach \
-    --health-cmd 'curl --fail --silent localhost:2380/health || exit 1' \
-    --health-interval '30s' \
-    --health-retries '1' \
-    --health-start-period '15s' \
-    --health-timeout '5s' \
-    --memory '128m' \
-    --memory-swap '-1' \
-    --name 'swarm-janitor' \
-    --publish '2380:2380' \
-    --restart 'always' \
-    --volume /var/run/docker.sock:/var/run/docker.sock \
-    swarm-janitor:latest
+  --env "AWS_DEFAULT_REGION=eu-west-1" \
+  --env "SWARM_REGISTRY=000000000000.dkr.ecr.eu-west-1.amazonaws.com" \
+  --env "SWARM_DESIRED_ROLE=worker" \
+  --env "SWARM_MANAGER_NAME_FILTER=foo-bar-manager" \
+  --env "SWARM_INTERVAL_ASSUME_ROLE=60" \
+  --env "SWARM_INTERVAL_PRUNE_NODES=30" \
+  --env "SWARM_INTERVAL_PRUNE_SYSTEM=86400" \
+  --env "SWARM_INTERVAL_REFRESH_AUTH=36000" \
+  --env "SWARM_PRUNE_IMAGES=true" \
+  --env "SWARM_PRUNE_VOLUMES=true" \
+  --detach \
+  --health-cmd 'curl --fail --silent localhost:2380/health || exit 1' \
+  --health-interval '30s' \
+  --health-retries '1' \
+  --health-start-period '15s' \
+  --health-timeout '5s' \
+  --memory '128m' \
+  --memory-swap '-1' \
+  --name 'swarm-janitor' \
+  --network 'host' \
+  --restart 'always' \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  arvacims/swarm-janitor:1.0.0
 ~~~~
 
 
@@ -80,21 +80,21 @@ $ docker build --tag swarm-janitor:latest .
 Build the stand-alone executable.
 ~~~~
 $ pipenv run pyinstaller \
-    --paths "$(pipenv --venv)" \
-    --clean \
-    --onefile \
-    swarm-janitor.py
+  --paths "$(pipenv --venv)" \
+  --clean \
+  --onefile \
+  swarm-janitor.py
 ~~~~
 
 Afterwards, clean up.
 ~~~~
 $ rm -rf \
-    .coverage \
-    .pytest_cache \
-    build/ \
-    coverage.xml \
-    dist/ \
-    htmlcov/ \
-    junit/ \
-    swarm-janitor.spec
+  .coverage \
+  .pytest_cache \
+  build/ \
+  coverage.xml \
+  dist/ \
+  htmlcov/ \
+  junit/ \
+  swarm-janitor.spec
 ~~~~
