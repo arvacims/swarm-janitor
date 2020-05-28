@@ -28,6 +28,6 @@ class JanitorAwsClient:
 
         reservations: List[Dict] = description['Reservations']
         reservation_instances: List[List[Dict]] = [reservation['Instances'] for reservation in reservations]
-        instances: List[Dict] = flatten_list(reservation_instances)
+        instances = flatten_list(reservation_instances)
 
         return [instance['PrivateIpAddress'] for instance in instances]

@@ -3,7 +3,7 @@ import functools
 import json
 import operator
 from enum import Enum
-from typing import Any, List
+from typing import List, TypeVar
 
 
 class SmartEncoder(json.JSONEncoder):
@@ -17,5 +17,8 @@ class SmartEncoder(json.JSONEncoder):
         return super().default(o)
 
 
-def flatten_list(list_of_lists: List[List[Any]]) -> List[Any]:
+T = TypeVar('T')
+
+
+def flatten_list(list_of_lists: List[List[T]]) -> List[T]:
     return functools.reduce(operator.iconcat, list_of_lists, [])
