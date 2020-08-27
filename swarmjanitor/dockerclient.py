@@ -77,7 +77,18 @@ class JanitorDockerClient:
     def demote_node(self, node_id: str):
         node: Node = self.client.nodes.get(node_id)
         spec: Dict = node.attrs['Spec']
+
         spec['Role'] = 'worker'
+
+        node.update(node_spec=spec)
+
+    def label_node(self, node_id: str, label_key: str, label_value: str):
+        node: Node = self.client.nodes.get(node_id)
+        spec: Dict = node.attrs['Spec']
+
+        labels: Dict = spec['Labels']
+        labels[label_key] = label_value
+
         node.update(node_spec=spec)
 
     def swarm_info(self) -> SwarmInfo:

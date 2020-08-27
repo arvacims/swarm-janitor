@@ -19,6 +19,7 @@ Include this command in your user data script:
 ~~~~
 $ docker run \
   --env "AWS_DEFAULT_REGION=eu-west-1" \
+  --env "SWARM_NODE_AZ=$(ec2metadata --availability-zone)" \
   --env "SWARM_REGISTRY=000000000000.dkr.ecr.eu-west-1.amazonaws.com" \
   --env "SWARM_DESIRED_ROLE=worker" \
   --env "SWARM_MANAGER_NAME_FILTER=foo-bar-manager" \
@@ -40,7 +41,7 @@ $ docker run \
   --network 'host' \
   --restart 'always' \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  arvacims/swarm-janitor:1.0.1
+  arvacims/swarm-janitor:1.1.0
 ~~~~
 
 
@@ -60,6 +61,7 @@ $ pipenv run pytest --junitxml=junit/test-results.xml --cov=. --cov-report=xml -
 Run the application from source.
 ~~~~
 $ export AWS_DEFAULT_REGION=eu-west-1
+$ export SWARM_NODE_AZ=eu-west-1a
 $ export SWARM_REGISTRY=000000000000.dkr.ecr.eu-west-1.amazonaws.com
 $ export SWARM_DESIRED_ROLE=worker
 $ export SWARM_MANAGER_NAME_FILTER=foo-bar-manager

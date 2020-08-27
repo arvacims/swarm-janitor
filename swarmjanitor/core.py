@@ -1,7 +1,7 @@
 import base64
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import requests
 
@@ -112,10 +112,26 @@ class JanitorCore:
         except JanitorError as error:
             logging.info('Skipped refreshing authentication: %s', error.message)
 
+    def _label_node_az(self, opt_swarm_info: Optional[SwarmInfo] = None):
+        swarm_info: SwarmInfo = self.docker_client.swarm_info() if opt_swarm_info is None else opt_swarm_info
+
+        if not _is_swarm_active(swarm_info):
+            logging.info('Skipped labeling node.')
+            return
+
+        label_key = 'availability_zone'
+        label_value = self.config.availability_zone
+
+        logging.info('Assigning label "%s=%s" to this node ...', label_key, label_value)
+
+        self.docker_client.label_node(swarm_info.node_id, label_key, label_value)
+
     def assume_desired_role(self):
+        swarm_info = self.docker_client.swarm_info()
+        self._label_node_az(swarm_info)
+
         desired_role = self.config.desired_role
         logging.info('Assuming %s role ...', desired_role.value)
-        swarm_info = self.docker_client.swarm_info()
 
         local_node_state = swarm_info.local_node_state
         if local_node_state in [LocalNodeState.PENDING, LocalNodeState.ERROR]:
@@ -151,7 +167,7 @@ class JanitorCore:
 
                 logging.info('Joining the swarm via %s using the token "%s" ...', join_address, join_token)
                 self.docker_client.join_swarm(join_address, join_token)
-
+                self._label_node_az()
                 return
             except:
                 logging.warning('Failed to join the swarm via %s.', manager_address, exc_info=True)
