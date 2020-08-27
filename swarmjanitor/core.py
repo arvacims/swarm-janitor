@@ -38,6 +38,7 @@ class JoinInfo:
 
 @dataclass(frozen=True)
 class SystemInfo:
+    availability_zone: str
     is_swarm_active: bool
     is_manager: bool
     is_worker: bool
@@ -72,8 +73,8 @@ class JanitorCore:
             registry=self.config.registry
         )
 
-    def _list_nodes(self) -> List[NodeInfo]:
-        swarm_info = self.docker_client.swarm_info()
+    def _list_nodes(self, opt_swarm_info: Optional[SwarmInfo] = None) -> List[NodeInfo]:
+        swarm_info: SwarmInfo = self.docker_client.swarm_info() if opt_swarm_info is None else opt_swarm_info
 
         if not _is_manager(swarm_info):
             return []
@@ -112,26 +113,30 @@ class JanitorCore:
         except JanitorError as error:
             logging.info('Skipped refreshing authentication: %s', error.message)
 
-    def _label_node_az(self, opt_swarm_info: Optional[SwarmInfo] = None):
-        swarm_info: SwarmInfo = self.docker_client.swarm_info() if opt_swarm_info is None else opt_swarm_info
+    def _label_node_az(self, node: NodeInfo):
+        node_id = node.node_id
+        try:
+            node_address = node.address
+            url = 'http://%s:2380/system' % node_address
+            response = requests.get(url)
+            status_code = response.status_code
+            logging.info('GET "%s" %s', url, status_code)
+            response.raise_for_status()
 
-        if not _is_swarm_active(swarm_info):
-            logging.info('Skipped labeling node.')
-            return
+            system_info = SystemInfo(**response.json())
 
-        label_key = 'availability_zone'
-        label_value = self.config.availability_zone
+            label_key = 'availability_zone'
+            label_value = system_info.availability_zone
 
-        logging.info('Assigning label "%s=%s" to this node ...', label_key, label_value)
-
-        self.docker_client.label_node(swarm_info.node_id, label_key, label_value)
+            logging.info('Assigning label "%s=%s" to node %s ...', label_key, label_value, node_id)
+            self.docker_client.label_node(node_id, label_key, label_value)
+        except:
+            logging.warning('Failed to assign label to node %s.', node_id, exc_info=True)
 
     def assume_desired_role(self):
-        swarm_info = self.docker_client.swarm_info()
-        self._label_node_az(swarm_info)
-
         desired_role = self.config.desired_role
         logging.info('Assuming %s role ...', desired_role.value)
+        swarm_info = self.docker_client.swarm_info()
 
         local_node_state = swarm_info.local_node_state
         if local_node_state in [LocalNodeState.PENDING, LocalNodeState.ERROR]:
@@ -167,7 +172,7 @@ class JanitorCore:
 
                 logging.info('Joining the swarm via %s using the token "%s" ...', join_address, join_token)
                 self.docker_client.join_swarm(join_address, join_token)
-                self._label_node_az()
+
                 return
             except:
                 logging.warning('Failed to join the swarm via %s.', manager_address, exc_info=True)
@@ -178,6 +183,8 @@ class JanitorCore:
             raise SwarmLeaderError
 
         for node in self._list_nodes():
+            self._label_node_az(node)
+
             node_id = node.node_id
 
             if node.status == NodeState.READY:
@@ -217,11 +224,12 @@ class JanitorCore:
     def system_info(self) -> SystemInfo:
         swarm_info = self.docker_client.swarm_info()
         return SystemInfo(
+            availability_zone=self.config.availability_zone,
             is_swarm_active=_is_swarm_active(swarm_info),
             is_manager=_is_manager(swarm_info),
             is_worker=_is_worker(swarm_info),
             is_leader=self._is_leader(),
-            nodes=self._list_nodes(),
+            nodes=self._list_nodes(swarm_info),
             possible_manager_nodes=self._discover_possible_manager_addresses()
         )
 

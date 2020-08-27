@@ -41,7 +41,7 @@ $ docker run \
   --network 'host' \
   --restart 'always' \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  arvacims/swarm-janitor:1.1.0
+  arvacims/swarm-janitor:1.1.1
 ~~~~
 
 

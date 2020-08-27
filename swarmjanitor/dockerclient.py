@@ -51,6 +51,7 @@ class NodeState(Enum):
 class NodeInfo:
     node_id: str
     status: NodeState
+    address: str
     is_manager: bool
     manager_address: Optional[str]
     manager_is_leader: Optional[bool]
@@ -185,6 +186,7 @@ def _as_node_info(node_dict: Dict) -> NodeInfo:
     return NodeInfo(
         node_id=node_dict['ID'],
         status=NodeState(node_dict['Status']['State']),
+        address=node_dict['Status']['Addr'],
         is_manager=is_manager,
         manager_address=manager_address,
         manager_is_leader=manager_is_leader
