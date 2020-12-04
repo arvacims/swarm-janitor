@@ -133,6 +133,13 @@ class JanitorCore:
         except:
             logging.warning('Failed to assign label to node %s.', node_id, exc_info=True)
 
+    def label_node_az_skip(self):
+        if not self._is_leader():
+            raise SwarmLeaderError
+
+        for node in self._list_nodes():
+            self._label_node_az(node)
+
     def assume_desired_role(self):
         desired_role = self.config.desired_role
         logging.info('Assuming %s role ...', desired_role.value)
@@ -183,8 +190,6 @@ class JanitorCore:
             raise SwarmLeaderError
 
         for node in self._list_nodes():
-            self._label_node_az(node)
-
             node_id = node.node_id
 
             if node.status == NodeState.READY:

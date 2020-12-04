@@ -20,6 +20,7 @@ class JanitorConfig:
     desired_role: DesiredRole
     manager_name_filter: str
     interval_assume_role: int
+    interval_label_az: int
     interval_prune_nodes: int
     interval_prune_system: int
     interval_refresh_auth: int
@@ -34,6 +35,7 @@ class JanitorConfig:
             desired_role=DesiredRole(os.getenv('SWARM_DESIRED_ROLE', 'manager')),
             manager_name_filter=os.getenv('SWARM_MANAGER_NAME_FILTER', 'manager'),
             interval_assume_role=int(os.getenv('SWARM_INTERVAL_ASSUME_ROLE', '45')),
+            interval_label_az=int(os.getenv('SWARM_INTERVAL_LABEL_AZ', '30')),
             interval_prune_nodes=int(os.getenv('SWARM_INTERVAL_PRUNE_NODES', '30')),
             interval_prune_system=int(os.getenv('SWARM_INTERVAL_PRUNE_SYSTEM', '86400')),
             interval_refresh_auth=int(os.getenv('SWARM_INTERVAL_REFRESH_AUTH', '3600')),
