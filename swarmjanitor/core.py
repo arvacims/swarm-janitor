@@ -118,7 +118,7 @@ class JanitorCore:
         try:
             node_address = node.address
             url = 'http://%s:2380/system' % node_address
-            response = requests.get(url)
+            response = requests.get(url, timeout=2.0)
             status_code = response.status_code
             logging.info('GET "%s" %s', url, status_code)
             response.raise_for_status()
@@ -167,7 +167,7 @@ class JanitorCore:
         for manager_address in manager_addresses:
             try:
                 url = 'http://%s:2380/join' % manager_address
-                response = requests.get(url)
+                response = requests.get(url, timeout=2.0)
                 status_code = response.status_code
                 logging.info('GET "%s" %s', url, status_code)
                 response.raise_for_status()
