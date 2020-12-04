@@ -36,7 +36,7 @@ class JanitorConfig:
             interval_assume_role=int(os.getenv('SWARM_INTERVAL_ASSUME_ROLE', '45')),
             interval_prune_nodes=int(os.getenv('SWARM_INTERVAL_PRUNE_NODES', '30')),
             interval_prune_system=int(os.getenv('SWARM_INTERVAL_PRUNE_SYSTEM', '86400')),
-            interval_refresh_auth=int(os.getenv('SWARM_INTERVAL_REFRESH_AUTH', '36000')),
+            interval_refresh_auth=int(os.getenv('SWARM_INTERVAL_REFRESH_AUTH', '3600')),
             prune_images=_str_to_bool(os.getenv('SWARM_PRUNE_IMAGES', 'false')),
             prune_volumes=_str_to_bool(os.getenv('SWARM_PRUNE_VOLUMES', 'false'))
         )
