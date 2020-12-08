@@ -113,32 +113,35 @@ class JanitorCore:
         except JanitorError as error:
             logging.info('Skipped refreshing authentication: %s', error.message)
 
-    def _label_node_az(self, node: NodeInfo):
-        node_id = node.node_id
-        try:
-            node_address = node.address
-            url = 'http://%s:2380/system' % node_address
-            response = requests.get(url, timeout=2.0)
-            status_code = response.status_code
-            logging.info('GET "%s" %s', url, status_code)
-            response.raise_for_status()
-
-            system_info = SystemInfo(**response.json())
-
-            label_key = 'availability_zone'
-            label_value = system_info.availability_zone
-
-            logging.info('Assigning label "%s=%s" to node %s ...', label_key, label_value, node_id)
-            self.docker_client.label_node(node_id, label_key, label_value)
-        except:
-            logging.warning('Failed to assign label to node %s.', node_id, exc_info=True)
-
-    def label_node_az_skip(self):
+    def _label_nodes_az(self):
         if not self._is_leader():
             raise SwarmLeaderError
 
         for node in self._list_nodes():
-            self._label_node_az(node)
+            node_id = node.node_id
+            try:
+                node_address = node.address
+                url = 'http://%s:2380/system' % node_address
+                response = requests.get(url, timeout=2.0)
+                status_code = response.status_code
+                logging.info('GET "%s" %s', url, status_code)
+                response.raise_for_status()
+
+                system_info = SystemInfo(**response.json())
+
+                label_key = 'availability_zone'
+                label_value = system_info.availability_zone
+
+                logging.info('Assigning label "%s=%s" to node %s ...', label_key, label_value, node_id)
+                self.docker_client.label_node(node_id, label_key, label_value)
+            except:
+                logging.warning('Failed to assign label to node %s.', node_id, exc_info=True)
+
+    def label_nodes_az_skip(self):
+        try:
+            self._label_nodes_az()
+        except JanitorError as error:
+            logging.info('Skipped labelling nodes: %s', error.message)
 
     def assume_desired_role(self):
         desired_role = self.config.desired_role
