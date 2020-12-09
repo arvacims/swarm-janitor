@@ -32,10 +32,10 @@ $ docker run \
   --env "SWARM_PRUNE_VOLUMES=true" \
   --detach \
   --health-cmd 'curl --fail --silent localhost:2380/health || exit 1' \
-  --health-interval '30s' \
+  --health-interval '60s' \
   --health-retries '1' \
-  --health-start-period '15s' \
-  --health-timeout '5s' \
+  --health-start-period '10s' \
+  --health-timeout '2s' \
   --memory '128m' \
   --memory-swap '-1' \
   --name 'swarm-janitor' \
