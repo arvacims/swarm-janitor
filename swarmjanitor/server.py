@@ -77,7 +77,7 @@ class JanitorServer(Stoppable):
         status_word = 'UP'
         status_code = 200
 
-        if len(jobs) != 4:
+        if len(jobs) != 5:
             status_word = 'WARN'
             status_code = 500
 
